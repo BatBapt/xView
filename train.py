@@ -1,0 +1,162 @@
+import os
+import torch
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+import dataset as my_dataset
+import models as my_models
+import configuration as cfg
+
+
+def collate_fn(batch):
+    return tuple(zip(*batch))
+
+
+def get_dataloaders(root_dir, folder_name, batch_size=4, num_workers=2):
+
+    print("Initialisation des datasets...")
+
+    train_dataset = my_dataset.SingleLabelCoco(
+        root_dir=root_dir,
+        annotation_file=f"annotations/{folder_name}_train.json",
+        is_train=True
+    )
+
+    val_dataset = my_dataset.SingleLabelCoco(
+        root_dir=root_dir,
+        annotation_file=f"annotations/{folder_name}_val.json",
+        is_train=False
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        collate_fn=collate_fn,
+        pin_memory=True if torch.cuda.is_available() else False
+    )
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        collate_fn=collate_fn,
+        pin_memory=True if torch.cuda.is_available() else False
+    )
+
+    return train_loader, val_loader
+
+
+def train_one_epoch(model, optimizer, data_loader, device, epoch):
+    model.train()
+
+    total_loss = 0.0
+
+    loop = tqdm(data_loader, desc=f"Epoch [{epoch}]", leave=True)
+
+    for images, targets in loop:
+        images = list(image.to(device) for image in images)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        loss_dict = model(images, targets)
+
+        losses = sum(loss for loss in loss_dict.values())
+
+        optimizer.zero_grad()
+        losses.backward()
+        optimizer.step()
+
+        total_loss += losses.item()
+        loop.set_postfix(loss=losses.item())
+
+    avg_loss = total_loss / len(data_loader)
+    print(f"-> Fin de l'epoch {epoch} | Loss moyenne : {avg_loss:.4f}")
+
+    return avg_loss
+
+
+def validate(model, data_loader, device, epoch):
+    model.train()  # trick from Faster RCNN
+    total_loss = 0.0
+
+    loop = tqdm(data_loader, desc=f"Epoch [{epoch}] Valid", leave=True, colour='green')
+
+    with torch.no_grad():
+        for images, targets in loop:
+            images = list(image.to(device) for image in images)
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            loss_dict = model(images, targets)
+            losses = sum(loss for loss in loss_dict.values())
+
+            total_loss += losses.item()
+            loop.set_postfix(val_loss=losses.item())
+
+    return total_loss / len(data_loader)
+
+
+def main():
+    target_labels = ["Small Aircraft"]
+    folder_name = target_labels[0].replace(" ", "_")
+    root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
+
+    num_classes = 2
+    num_epochs = 10
+    batch_size = 8
+    num_workers = 2
+
+    base_lr = 0.005
+    backbone_lr = 0.0001
+
+    train_loader, val_loader = get_dataloaders(root_dir, folder_name, batch_size=batch_size, num_workers=num_workers)
+
+    print("Loading model")
+    model = my_models.get_model_instance_segmentation(num_classes)
+    model.to(cfg.DEVICE)
+
+    backbone_params = []
+    head_params = []
+
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        if 'roi_heads' in name or 'rpn' in name:
+            head_params.append(param)
+        else:
+            backbone_params.append(param)
+
+    optimizer = torch.optim.SGD([
+        {'params': backbone_params, 'lr': backbone_lr},
+        {'params': head_params, 'lr': base_lr}
+    ], momentum=0.9, weight_decay=0.0005)
+
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
+
+    weight_dir = "weights"
+    os.makedirs(weight_dir, exist_ok=True)
+
+    best_val_loss = float('inf')
+
+    print("Starting training !")
+    for epoch in range(1, num_epochs + 1):
+
+        train_loss = train_one_epoch(model, optimizer, train_loader, cfg.DEVICE, epoch)
+
+        val_loss = validate(model, val_loader, cfg.DEVICE, epoch)
+
+        lr_scheduler.step()
+
+        print(f"\n->Bilan Epoch {epoch} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+
+        torch.save(model.state_dict(), f"{weight_dir}/faster_rcnn_last.pth")
+
+        if val_loss < best_val_loss:
+            print(f"Model saved with validation loss: {val_loss:.4f}")
+            best_val_loss = val_loss
+            torch.save(model.state_dict(), f"{weight_dir}/faster_rcnn_best.pth")
+
+
+if __name__ == "__main__":
+    main()
