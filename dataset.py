@@ -81,54 +81,43 @@ class SingleLabelCoco(Dataset):
         return len(self.images_ids)
 
     def __getitem__(self, idx):
-        # Récupérer l'image
         img_info = self.coco_data['images'][idx]
         image_id = img_info['id']
         image_path = os.path.join(self.root_dir, 'images', img_info['file_name'])
 
-        # Lire l'image avec OpenCV
         image = cv2.imread(image_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # OpenCV lit en BGR
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         original_height, original_width = image.shape[:2]
 
-        # Récupérer les annotations pour cette image
         annotations = [
             ann for ann in self.coco_data['annotations']
             if ann['image_id'] == image_id
         ]
 
-        # Extraire les bounding boxes (en pixels), labels, et masques
         bboxes = []
         labels = []
         masks = []
         for ann in annotations:
-            # Bounding box au format COCO: [x_min, y_min, width, height] en pixels
             x_min, y_min, w, h = ann['bbox']
             x_max = x_min + w
             y_max = y_min + h
 
-            # Vérifier que les coordonnées sont valides
             if x_min < 0 or y_min < 0 or x_max > original_width or y_max > original_height:
-                print(f"⚠️ Bounding box hors limites: {x_min}, {y_min}, {x_max}, {y_max} (image: {original_width}x{original_height})")
+                print(f"Bbox out of range for {img_info['file_name']}: {x_min}, {y_min}, {x_max}, {y_max} (image: {original_width}x{original_height})")
                 continue
 
-            # Convertir en format Pascal VOC: [x_min, y_min, x_max, y_max]
             bboxes.append([x_min, y_min, x_max, y_max])
             labels.append(ann['category_id'])
 
-            # Masque (si disponible)
             if 'segmentation' in ann:
                 mask = utils.polygon_to_mask(ann['segmentation'], original_width, original_height)
                 masks.append(mask)
 
-        # Convertir les masques en numpy array
         if masks:
             masks = np.stack(masks)
         else:
             masks = np.zeros((0, original_height, original_width), dtype=np.uint8)
 
-        # Appliquer les transformations avec Albumentations
-        # Les bboxes sont en pixels au format Pascal VOC: [x_min, y_min, x_max, y_max]
         transformed = self.transform(
             image=image,
             bboxes=bboxes,
@@ -136,16 +125,13 @@ class SingleLabelCoco(Dataset):
             masks=masks
         )
 
-        # Récupérer les résultats
-        image = transformed['image']  # Shape: (1024, 1024, 3) après Resize
-        bboxes = transformed['bboxes']  # Toujours en pixels [x_min, y_min, x_max, y_max]
+        image = transformed['image']
+        bboxes = transformed['bboxes']
         labels = transformed['class_labels']
         masks = transformed['masks']
 
-        # Convertir les bboxes en tensor PyTorch (format Mask R-CNN: [x_min, y_min, x_max, y_max])
         bboxes = torch.as_tensor(bboxes, dtype=torch.float32)
 
-        # Créer le dictionnaire de cible pour Mask R-CNN
         target = {
             'boxes': bboxes,
             'labels': torch.as_tensor(labels, dtype=torch.float32),
@@ -182,19 +168,7 @@ if __name__ == "__main__":
         is_train=False
     )
 
-    print(len(train_dataset))
-    print(len(val_dataset))
-    print(len(test_dataset))
-
-    print("#"*50)
-
-    idx = random.randint(0, len(train_dataset))
-    img, target = train_dataset[idx]
-
-    print("Image shape:", img.shape)  # (3, 1024, 1024)
-    print("Boxes shape:", target['boxes'].shape)  #  (N, 4)
-    print("First box:", target['boxes'][0])
-
-    utils.visualize_augmented(train_dataset, idx=idx)
+    for idx in range(len(train_dataset)):
+        utils.visualize_augmented(train_dataset, idx=idx)
 
 
