@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 import numpy as np
-from pycocotools import mask as mask_coco_utils
 
 import configuration as cfg
 
@@ -25,9 +24,7 @@ def plot_image(image_id, filtered_features, class_name):
     image_path = os.path.join(cfg.TRAIN_IMAGES_PATH, image_id)
     with rasterio.open(image_path) as src:
         img = src.read()
-        transform = src.transform  # Pour convertir lon/lat → pixels
 
-        # Gestion des bandes
         if img.shape[0] == 1:
             img_rgb = img[0]
         elif img.shape[0] >= 3:
@@ -40,7 +37,6 @@ def plot_image(image_id, filtered_features, class_name):
 
         patches = []
         for _, row in filtered_features.iterrows():
-
             x_min, y_min, x_max, y_max = map(float, row["bounds_imcoords"].replace(" ", "").split(","))
             width = x_max - x_min
             height = y_max - y_min
@@ -60,7 +56,6 @@ def plot_image(image_id, filtered_features, class_name):
 
         p = PatchCollection(patches, match_original=True)
         ax.add_collection(p)
-
         ax.set_title(f"Annotations pour {image_id}")
         ax.axis("off")
         plt.tight_layout()
@@ -72,26 +67,22 @@ def filter_gdf_by_labels(gdf, labels_dict, target_labels):
         type_id for type_id, class_name in labels_dict.items()
         if class_name in target_labels
     ]
-
-    filtered_features = gdf[gdf["type_id"].isin(target_type_ids)]
-
-    return filtered_features
+    return gdf[gdf["type_id"].isin(target_type_ids)]
 
 
-def polygon_to_mask(segmentation, width, height):
-    if isinstance(segmentation[0], (list, tuple)):
-        segmentation = [coord for point in segmentation for coord in point]
-
-    rles = mask_coco_utils.frPyObjects([segmentation], height, width)
-    mask = mask_coco_utils.decode(rles)
-    return mask
-
-
-def visualize_augmented(dataset, idx=0, class_colors=None, show_masks=False):
+def visualize_augmented(dataset, idx=0, class_colors=None):
     img, target = dataset[idx]
 
+    for key, value in target.items():
+        print(f"{key}: {value} | {value.shape}")
+
     img = img.permute(1, 2, 0).cpu().numpy()  # (H, W, C)
-    img = (img * 255).astype(np.uint8)
+
+    # Denormaliser l'image pour l'affichage matplotlib
+    mean = np.array([0, 0, 0])
+    std = np.array([1, 1, 1])
+    img = std * img + mean
+    img = np.clip(img, 0, 1)
 
     img_info = dataset.get_image_info(idx)
     image_id = img_info['id']
@@ -101,9 +92,8 @@ def visualize_augmented(dataset, idx=0, class_colors=None, show_masks=False):
 
     boxes = target['boxes'].cpu().numpy()
     labels = target['labels'].cpu().numpy()
-    masks = target['masks'].cpu().numpy() if 'masks' in target else None
 
-    class_names = [dataset.category_id_to_name[label] for label in labels]
+    class_names = [dataset.category_id_to_name[int(label)] for label in labels]
 
     if class_colors is None:
         class_colors = {
@@ -123,17 +113,11 @@ def visualize_augmented(dataset, idx=0, class_colors=None, show_masks=False):
 
         ax.text(
             x_min, y_min - 5,
-            f"{class_name} (ID: {label})",
+            f"{class_name}",
             color="white",
             fontsize=8,
             bbox=dict(facecolor=color, alpha=0.7, edgecolor="none", pad=1)
         )
-
-        if show_masks and masks is not None and i < len(masks):
-            mask = masks[i]
-            mask_color = np.array(color) * 0.3
-            mask_3ch = np.stack([mask * c for c in mask_color], axis=-1)
-            ax.imshow(mask_3ch, extent=(x_min, x_max, y_max, y_min))
 
     ax.set_title(f"Image ID: {image_id} | Annotations: {len(boxes)}")
     ax.axis("off")
@@ -198,13 +182,9 @@ def prepare_xview2coco(target_labels, filtered_features, val_ratio=0.15, test_ra
                 x_min, y_min, x_max, y_max = bbox
                 width = x_max - x_min
                 height = y_max - y_min
-                print(width, height)
                 area = width * height
 
-                polygon = row["geometry"]
-                segmentation = [coord for point in polygon.exterior.coords for coord in point]
-
-                class_name = target_labels[0]  # TODO: À adapter si filtered_features contient plusieurs labels
+                class_name = target_labels[0]
                 category_id = [cat_id for cat_id, name in category_mapping.items() if name == class_name][0]
 
                 coco_data["annotations"].append({
@@ -212,7 +192,6 @@ def prepare_xview2coco(target_labels, filtered_features, val_ratio=0.15, test_ra
                     "image_id": image_id_to_coco[row["image_id"]],
                     "category_id": category_id,
                     "bbox": [x_min, y_min, width, height],
-                    "segmentation": [segmentation],
                     "area": area,
                     "iscrowd": 0
                 })
