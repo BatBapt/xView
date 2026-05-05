@@ -129,11 +129,11 @@ class SingleLabelCoco(Dataset):
 
         if len(bboxes) == 0:
             bboxes = torch.zeros((0, 4), dtype=torch.float32)
-            labels = torch.zeros((0,), dtype=torch.float32)
+            labels = torch.zeros((0,), dtype=torch.int64)
             area = torch.zeros((0,), dtype=torch.float32)
         else:
             bboxes = torch.as_tensor(bboxes, dtype=torch.float32)
-            labels = torch.as_tensor(labels, dtype=torch.float32)
+            labels = torch.as_tensor(labels, dtype=torch.int64)
             area = (bboxes[:, 3] - bboxes[:, 1]) * (bboxes[:, 2] - bboxes[:, 0])
 
         target = {
