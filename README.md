@@ -29,16 +29,20 @@ All the models will be trained with my GPU, Nvidia RTX 4060 (8GB VRAM)
 
 ---
 
+## Model used
+
+- A baseline [Faster R-CNN](https://arxiv.org/pdf/1506.01497).
+
+---
+
 ## Main files
 
 You can download the repository and run the code, here is the good pipeline:
 
 1. Download the dataset
 2. Edit the YAML file to configure your path, settings and hyperparameters
-3. Run the script `run_all.py` to convert the xView format into COCO annotations
-4. Run the script `dataset.py` to validate the conversation and visualize samples
-5. Run the script `train.py` to train the model available in `models.py`
-6. Once the training is complete, run the `inference.py` file to compute the metrics and visualize the predictions
+3. Run the `run_all.py` to start the whole pipeline: data processing, training and inference
+4. Once the training is complete, run the `inference.py` file to compute the metrics and visualize the predictions
 
 ---
 
@@ -47,26 +51,40 @@ You can download the repository and run the code, here is the good pipeline:
 What has been done so far ?
 
 ### Baseline Faster R-CNN for 2 labels
-- I have trained a baseline model with [Faster R-CNN](https://arxiv.org/pdf/1506.01497) for 100 epochs for only 2 labels with a batch size of 8.
+- I have trained a baseline model with a Faster R-CNN for 100 epochs for only **2** labels with a batch size of 8.
   - Trained on 2 labels: 'Small Aircraft' and 'Passenger/Cargo Plane'
   - Time / epochs ~= 30sec
   - **mAP (0.5) ~= 0.35**
   - Different learning rate were used for the backbone and the new head 
   - While the results are small, it also shows a good future.
   
-| Metric                  | Value   |
-|:------------------------|:--------|
-| mAP (IoU=0.50:0.95)     | 0.1699  |
-| mAP50 (IoU=0.50 strict) | 0.3528  |
-| mAP75 (IoU=0.75 strict) | 0.1305  |
-| mAP (Small objects)     | 0.1463  |
-| mAP (Medium objects)    | 0.1827  |
-| mAP (Large objects)     | -1.0000 |
+    | Metric                  | Value   |
+    |:------------------------|:--------|
+    | mAP (IoU=0.50:0.95)     | 0.1699  |
+    | mAP50 (IoU=0.50 strict) | 0.3528  |
+    | mAP75 (IoU=0.75 strict) | 0.1305  |
+    | mAP (Small objects)     | 0.1463  |
+    | mAP (Medium objects)    | 0.1827  |
+    | mAP (Large objects)     | -1.0000 |
 
 
 ### Baseline Faster R-CNN for 3 labels
 
-**IN PROGESS**
+- I have trained a baseline model with a Faster R-CNN for 100 epochs for only **3** labels with a batch size of 8.
+  - Trained on 3 labels: 'Small Aircraft' and 'Passenger/Cargo Plane' and 'Helicopter'
+  - Time / epochs ~= 30sec
+  - **mAP (0.5) ~= 0.3015**
+  - Different learning rate were used for the backbone and the new head 
+  - The results are smaller than the previous version with only 2 labels.
+  
+    | Metric                  | Value   |
+    |:------------------------|:--------|
+    | mAP (IoU=0.50:0.95)     | 0.1390  |
+    | mAP50 (IoU=0.50 strict) | 0.3015  |
+    | mAP75 (IoU=0.75 strict) | 0.0967  |
+    | mAP (Small objects)     | 0.1188  |
+    | mAP (Medium objects)    | 0.2162  |
+    | mAP (Large objects)     | -1.0000 |
 
 ---
 
