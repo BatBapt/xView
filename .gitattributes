@@ -1,3 +1,4 @@
 *.pth filter=lfs diff=lfs merge=lfs -text
 weights/baseline_faster_rcnn/faster_rcnn_best.pth filter=lfs diff=lfs merge=lfs -text
 weights/baseline_faster_rcnn_2_labels/faster_rcnn_best.pth filter=lfs diff=lfs merge=lfs -text
+weights/baseline_faster_rcnn_3_labels/faster_rcnn_best.pth filter=lfs diff=lfs merge=lfs -text
