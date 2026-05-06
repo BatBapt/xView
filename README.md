@@ -62,4 +62,4 @@ Future improvements will arrive soon including:
 - User-friendly experience to use the repo
 - And much more !
 
-Stay Tuned !
+Stay Tuned :) 
