@@ -43,7 +43,7 @@ What has been done so far ?
 
 ## Main files
 
-You can already download the repository and run the code, here is the good pipeline:
+You can download the repository and run the code, here is the good pipeline:
 
 1. Download the dataset
 2. Edit the YAML file to configure your path, settings and hyperparameters
@@ -56,4 +56,10 @@ You can already download the repository and run the code, here is the good pipel
 
 ## Futur 
 
-Future improvements will arrive soon, including new models, new training, new data format
+Future improvements will arrive soon including:
+- New models
+- New data format (COCO or YOLO format)
+- User-friendly experience to use the repo
+- And much more !
+
+Stay Tuned !
