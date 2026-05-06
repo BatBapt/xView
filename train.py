@@ -3,6 +3,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import utils as utils
 import dataset as my_dataset
 import models as my_models
 import configuration as cfg
