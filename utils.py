@@ -158,6 +158,10 @@ def prepare_xview2coco(target_labels, filtered_features, labels_dict, output_pat
             input_image_path = os.path.join(cfg.TRAIN_IMAGES_PATH, image_id)
             output_image_path = os.path.join(output_images_path, image_id)
 
+            if not os.path.exists(input_image_path):
+                print(f"Skipping image {input_image_path} -> does not exists")
+                continue
+
             if not os.path.exists(output_image_path):
                 shutil.copy(input_image_path, output_image_path)
 

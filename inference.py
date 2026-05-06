@@ -98,7 +98,7 @@ def evaluate_performance(model, dataset, device):
     return results
 
 
-def inference(target_labels, folder_name, root_dir, weights_path, threshold=0.5, device="cpu"):
+def inference(target_labels, folder_name, root_dir, weights_path, threshold=0.5, visualize=False, device="cpu"):
     if not os.path.exists(weights_path):
         print(f"Model weight {weights_path} not found. Make sure to train the model before")
         exit()
@@ -141,7 +141,8 @@ def inference(target_labels, folder_name, root_dir, weights_path, threshold=0.5,
 
             image_for_plot = image_tensor.permute(1, 2, 0).cpu().numpy()
 
-            plot_predictions(image_for_plot, test_dataset, predictions, target, threshold)
+            if visualize:
+                plot_predictions(image_for_plot, test_dataset, predictions, target, threshold)
 
 
 if __name__ == "__main__":

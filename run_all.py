@@ -12,7 +12,14 @@ import inference as inference_model
 
 if __name__ == "__main__":
     target_labels = cfg.LABELS
-    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
+    labels_map_file = os.path.join(cfg.LABELS_PATH, "xview_class_labels.txt")  # got from xview github
+    labels_dict = utils.load_labels_txt(labels_map_file)
+
+    if target_labels == "all":
+        folder_name = "all_labels"
+        target_labels = list(labels_dict.values())
+    else:
+        folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
     print(f"Running pipeline for labels: {target_labels}")
@@ -21,11 +28,10 @@ if __name__ == "__main__":
     weights_dir = os.path.join(cfg.MODEL_WEIGHTS_PATH, model_name)
     os.makedirs(weights_dir, exist_ok=True)
 
-    visualize = True
+    visualize = False
 
     if not os.path.exists(root_dir):
         geojson_label_file = os.path.join(cfg.LABELS_PATH, "xView_train.geojson")
-        labels_map_file = os.path.join(cfg.LABELS_PATH, "xview_class_labels.txt")  # got from xview github
 
         gdf = gpd.read_file(geojson_label_file)
         labels_dict = utils.load_labels_txt(labels_map_file)
@@ -77,6 +83,8 @@ if __name__ == "__main__":
         folder_name,
         root_dir,
         weights_best_path,
+        threshold=0.5,
+        visualize=visualize,
         device=cfg.DEVICE
     )
 
