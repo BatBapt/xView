@@ -34,6 +34,7 @@ All the models will be trained with my GPU, Nvidia RTX 4060 (8GB VRAM)
 What has been done so far ?
 
 - I have trained a baseline model with [Faster R-CNN](https://arxiv.org/pdf/1506.01497) for 100 epochs for only 2 labels with a batch size of 8.
+  - Trained on 2 labels: 'Small Aircraft' and 'Passenger/Cargo Plane'
   - Time / epochs ~= 30sec
   - **mAP (0.5) ~= 0.35**
   - Different learning rate were used for the backbone and the new head 
