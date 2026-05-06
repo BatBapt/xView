@@ -102,13 +102,12 @@ def evaluate_performance(model, dataset, device):
 
 
 def inference():
-    weight_dir = "weights"
-    weights_path = f"{weight_dir}/faster_rcnn_best.pth"
+    weights_path = f"{cfg.MODEL_WEIGHTS_PATH}/faster_rcnn_best.pth"
     if not os.path.exists(weights_path):
         print(f"Model weight {weights_path} not found. Make sure to train the model before")
         exit()
 
-    target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
+    target_labels = cfg.LABELS
     folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 

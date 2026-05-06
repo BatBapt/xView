@@ -15,6 +15,6 @@ def get_model_instance_segmentation(num_classes):
 if __name__ == "__main__":
     import configuration as cfg
 
-    model = get_model_instance_segmentation(num_classes=2)  # 1 label + background
+    model = get_model_instance_segmentation(num_classes=len(cfg.LABELS) + 1)  # +1 bc of background
     model.to(cfg.DEVICE)
     print(model.roi_heads.box_predictor)

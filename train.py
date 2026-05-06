@@ -95,17 +95,17 @@ def validate(model, data_loader, device, epoch):
 
 
 def train():
-    target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
+    target_labels = cfg.LABELS
     folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
     num_classes = len(target_labels) + 1  # +1 bc of background
-    num_epochs = 100
-    batch_size = 8
-    num_workers = 2
+    num_epochs = cfg.EPOCHS
+    batch_size = cfg.BATCH_SIZE
+    num_workers = cfg.NUM_WORKERS
 
-    base_lr = 0.005  # new head
-    backbone_lr = 0.0001  # backbone
+    base_lr = cfg.LR_HEAD  # new head
+    backbone_lr = cfg.LR_BACKBONE # backbone
 
     train_loader, val_loader = get_dataloaders(root_dir, folder_name, batch_size=batch_size, num_workers=num_workers)
 
@@ -131,7 +131,7 @@ def train():
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
 
-    weight_dir = "weights"
+    weight_dir = cfg.MODEL_WEIGHTS_PATH
     os.makedirs(weight_dir, exist_ok=True)
 
     best_val_loss = float('inf')

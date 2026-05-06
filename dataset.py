@@ -145,7 +145,7 @@ class XViewCocoDataset(Dataset):
 
 
 if __name__ == "__main__":
-    target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
+    target_labels = cfg.LABELS
     folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
