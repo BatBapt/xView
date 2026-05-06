@@ -125,8 +125,8 @@ def visualize_augmented(dataset, idx=0, class_colors=None):
     plt.show()
 
 
-def prepare_xview2coco(target_labels, filtered_features, val_ratio=0.15, test_ratio=0.05, random_seed=42):
-    folder_name = target_labels[0].replace(" ", "_")
+def prepare_xview2coco(target_labels, filtered_features, labels_dict, val_ratio=0.2, random_seed=42):
+    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     output_path = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
     output_images_path = os.path.join(output_path, "images")
     output_annotations_path = os.path.join(output_path, "annotations")
@@ -137,14 +137,13 @@ def prepare_xview2coco(target_labels, filtered_features, val_ratio=0.15, test_ra
     unique_image_ids = filtered_features["image_id"].unique().tolist()
     random.Random(random_seed).shuffle(unique_image_ids)
 
-    test_size = int(len(unique_image_ids) * test_ratio)
     val_size = int(len(unique_image_ids) * val_ratio)
 
-    test_image_ids = unique_image_ids[:test_size]
-    val_image_ids = unique_image_ids[test_size:test_size + val_size]
-    train_image_ids = unique_image_ids[test_size + val_size:]
+    val_image_ids = unique_image_ids[:val_size]
+    train_image_ids = unique_image_ids[val_size:]
 
     category_mapping = {idx + 1: label for idx, label in enumerate(target_labels)}
+    name_to_category_id = {name: cat_id for cat_id, name in category_mapping.items()}
 
     def generate_coco_json(image_ids, split_name):
         coco_data = {
@@ -184,8 +183,9 @@ def prepare_xview2coco(target_labels, filtered_features, val_ratio=0.15, test_ra
                 height = y_max - y_min
                 area = width * height
 
-                class_name = target_labels[0]
-                category_id = [cat_id for cat_id, name in category_mapping.items() if name == class_name][0]
+                original_type_id = row["type_id"]
+                class_name = labels_dict[original_type_id]
+                category_id = name_to_category_id[class_name]
 
                 coco_data["annotations"].append({
                     "id": annotation_id,
@@ -205,6 +205,9 @@ def prepare_xview2coco(target_labels, filtered_features, val_ratio=0.15, test_ra
 
     generate_coco_json(train_image_ids, "train")
     generate_coco_json(val_image_ids, "val")
-    generate_coco_json(test_image_ids, "test")
 
-    print(f"COCO dataset created at {output_path} with splits: train={len(train_image_ids)}, val={len(val_image_ids)}, test={len(test_image_ids)}")
+    print(f"COCO dataset created at {output_path} with splits: train={len(train_image_ids)}, val={len(val_image_ids)}")
+
+
+def collate_fn(batch):
+    return tuple(zip(*batch))

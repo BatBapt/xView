@@ -8,21 +8,17 @@ import models as my_models
 import configuration as cfg
 
 
-def collate_fn(batch):
-    return tuple(zip(*batch))
-
-
 def get_dataloaders(root_dir, folder_name, batch_size=4, num_workers=2):
 
     print("Initialisation des datasets...")
 
-    train_dataset = my_dataset.SingleLabelCoco(
+    train_dataset = my_dataset.XViewCocoDataset(
         root_dir=root_dir,
         annotation_file=f"annotations/{folder_name}_train.json",
         is_train=True
     )
 
-    val_dataset = my_dataset.SingleLabelCoco(
+    val_dataset = my_dataset.XViewCocoDataset(
         root_dir=root_dir,
         annotation_file=f"annotations/{folder_name}_val.json",
         is_train=False
@@ -33,7 +29,7 @@ def get_dataloaders(root_dir, folder_name, batch_size=4, num_workers=2):
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
-        collate_fn=collate_fn,
+        collate_fn=utils.collate_fn,
         pin_memory=True if torch.cuda.is_available() else False
     )
 
@@ -42,7 +38,7 @@ def get_dataloaders(root_dir, folder_name, batch_size=4, num_workers=2):
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        collate_fn=collate_fn,
+        collate_fn=utils.collate_fn,
         pin_memory=True if torch.cuda.is_available() else False
     )
 
@@ -98,17 +94,17 @@ def validate(model, data_loader, device, epoch):
 
 
 def main():
-    target_labels = ["Small Aircraft"]
-    folder_name = target_labels[0].replace(" ", "_")
+    target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
+    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
-    num_classes = 2
-    num_epochs = 10
+    num_classes = len(target_labels) + 1  # +1 bc of background
+    num_epochs = 100
     batch_size = 8
     num_workers = 2
 
-    base_lr = 0.005
-    backbone_lr = 0.0001
+    base_lr = 0.005  # new head
+    backbone_lr = 0.0001  # backbone
 
     train_loader, val_loader = get_dataloaders(root_dir, folder_name, batch_size=batch_size, num_workers=num_workers)
 

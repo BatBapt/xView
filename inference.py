@@ -1,0 +1,153 @@
+import os
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+from torch.utils.data import DataLoader
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
+
+import utils as utils
+import dataset as my_dataset
+import models as my_models
+import configuration as cfg
+
+
+def plot_predictions(image_rgb, dataset, predictions, target, confidence_threshold=0.5):
+
+    img_display = np.clip(image_rgb, 0, 1)
+
+    fig, ax = plt.subplots(figsize=(12, 12))
+    ax.imshow(img_display)
+
+    gt_boxes = target['boxes'].cpu().numpy()
+    for box in gt_boxes:
+        x_min, y_min, x_max, y_max = box
+        width, height = x_max - x_min, y_max - y_min
+        rect = Rectangle((x_min, y_min), width, height,
+                         linewidth=2, edgecolor="red", facecolor="none", linestyle="--")
+        ax.add_patch(rect)
+        ax.text(x_min, y_min - 5, "Vrai Objet", color="red", fontsize=8, fontweight='bold')
+
+    pred_boxes = predictions['boxes'].cpu().numpy()
+    pred_scores = predictions['scores'].cpu().numpy()
+    pred_labels = predictions['labels'].cpu().numpy()
+
+    count = 0
+    for box, score, label_id in zip(pred_boxes, pred_scores, pred_labels):
+        if score >= confidence_threshold:
+            x_min, y_min, x_max, y_max = box
+            width, height = x_max - x_min, y_max - y_min
+
+            class_name = dataset.category_id_to_name[label_id]
+
+            rect = Rectangle((x_min, y_min), width, height,
+                             linewidth=2, edgecolor="lime", facecolor="none")
+            ax.add_patch(rect)
+
+            text = f"{class_name}: {score:.2f}"
+            ax.text(x_min, y_max + 15, text, color="black", fontsize=10, fontweight='bold',
+                    bbox=dict(facecolor="lime", alpha=0.8, edgecolor="none", pad=2))
+            count += 1
+
+    image_id = target['image_id'].item()
+    ax.set_title(
+        f"Image ID: {image_id} | Vrais Objets: {len(gt_boxes)} | Détectés: {count} (Seuil: {confidence_threshold})")
+
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], color='red', lw=2, linestyle='--', label='Vérité Terrain (Ground Truth)'),
+        Line2D([0], [0], color='lime', lw=2, label='Prédiction du Modèle')
+    ]
+    ax.legend(handles=legend_elements, loc='upper right')
+
+    ax.axis("off")
+    plt.tight_layout()
+    plt.show()
+
+
+def evaluate_performance(model, dataset, device):
+    test_loader = DataLoader(dataset, batch_size=4, shuffle=False, num_workers=2, collate_fn=utils.collate_fn)
+
+    metric = MeanAveragePrecision(iou_type="bbox")
+
+    model.eval()
+    with torch.no_grad():
+        for i, (images, targets) in enumerate(test_loader):
+            print(f"Évaluation du lot {i + 1}/{len(test_loader)}...")
+
+            images = list(img.to(device) for img in images)
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            preds = model(images)
+
+            metric.update(preds, targets)
+
+    # Calcul final
+    print("\nCalcul des résultats")
+    results = metric.compute()
+
+    # Affichage propre des résultats
+    print("\n" + "*" * 50)
+    print("Evaluation results)")
+    print("*" * 50)
+    print(f"mAP (IoU=0.50:0.95)      : {results['map'].item():.4f}")
+    print(f"mAP50 (IoU=0.50 strict)  : {results['map_50'].item():.4f}")
+    print(f"mAP75 (IoU=0.75 strict)  : {results['map_75'].item():.4f}")
+    print(f"mAP (Petits objets)      : {results['map_small'].item():.4f}")
+    print(f"mAP (Moyens objets)      : {results['map_medium'].item():.4f}")
+    print(f"mAP (Grands objets)      : {results['map_large'].item():.4f}")
+    print("*" * 50 + "\n")
+
+    return results
+
+
+def main():
+    target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
+    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
+    root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
+
+    num_classes = len(target_labels) + 1
+    weights_path = "weights/faster_rcnn_best.pth"
+    confidence_threshold = 0.5
+
+    device = cfg.DEVICE
+
+    print("Chargement des données de test...")
+    test_dataset = my_dataset.XViewCocoDataset(
+        root_dir=root_dir,
+        annotation_file=f"annotations/{folder_name}_val.json",
+        is_train=False
+    )
+    print(f"{len(test_dataset)} images found.")
+
+    print("Chargement des poids du modèle...")
+    model = my_models.get_model_instance_segmentation(num_classes)
+
+    model.load_state_dict(torch.load(weights_path, map_location=device))
+
+    model.eval()
+    model.to(device)
+
+    num_images_to_test = len(test_dataset)
+
+    evaluate_performance(model, test_dataset, device)
+
+    exit()
+
+    with torch.no_grad():
+        for i in range(num_images_to_test):
+            print(f"Analyse de l'image {i + 1}/{num_images_to_test}...")
+
+            image_tensor, target = test_dataset[i]
+
+            image_batch = image_tensor.unsqueeze(0).to(device)
+
+            predictions = model(image_batch)[0]
+
+            image_for_plot = image_tensor.permute(1, 2, 0).cpu().numpy()
+
+            plot_predictions(image_for_plot, test_dataset, predictions, target, confidence_threshold)
+
+
+if __name__ == "__main__":
+    main()

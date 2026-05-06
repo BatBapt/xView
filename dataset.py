@@ -13,7 +13,7 @@ import utils as utils
 import configuration as cfg
 
 
-class SingleLabelCoco(Dataset):
+class XViewCocoDataset(Dataset):
     def __init__(self, root_dir, annotation_file, transform=None, is_train=True):
         self.root_dir = root_dir
         self.annotation_file = annotation_file
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     folder_name = target_labels[0].replace(" ", "_")
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
-    train_dataset = SingleLabelCoco(
+    train_dataset = XViewCocoDataset(
         root_dir=root_dir,
         annotation_file=f"annotations/{folder_name}_train.json",
         is_train=True
