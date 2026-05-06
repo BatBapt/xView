@@ -29,19 +29,6 @@ All the models will be trained with my GPU, Nvidia RTX 4060 (8GB VRAM)
 
 ---
 
-## Experiments
-
-What has been done so far ?
-
-- I have trained a baseline model with [Faster R-CNN](https://arxiv.org/pdf/1506.01497) for 100 epochs for only 2 labels with a batch size of 8.
-  - Trained on 2 labels: 'Small Aircraft' and 'Passenger/Cargo Plane'
-  - Time / epochs ~= 30sec
-  - **mAP (0.5) ~= 0.35**
-  - Different learning rate were used for the backbone and the new head 
-  - While the results are small, it also shows a good future.
-
----
-
 ## Main files
 
 You can download the repository and run the code, here is the good pipeline:
@@ -55,12 +42,41 @@ You can download the repository and run the code, here is the good pipeline:
 
 ---
 
+## Experiments
+
+What has been done so far ?
+
+### Baseline Faster R-CNN for 2 labels
+- I have trained a baseline model with [Faster R-CNN](https://arxiv.org/pdf/1506.01497) for 100 epochs for only 2 labels with a batch size of 8.
+  - Trained on 2 labels: 'Small Aircraft' and 'Passenger/Cargo Plane'
+  - Time / epochs ~= 30sec
+  - **mAP (0.5) ~= 0.35**
+  - Different learning rate were used for the backbone and the new head 
+  - While the results are small, it also shows a good future.
+  
+| Metric                  | Value   |
+|:------------------------|:--------|
+| mAP (IoU=0.50:0.95)     | 0.1699  |
+| mAP50 (IoU=0.50 strict) | 0.3528  |
+| mAP75 (IoU=0.75 strict) | 0.1305  |
+| mAP (Small objects)     | 0.1463  |
+| mAP (Medium objects)    | 0.1827  |
+| mAP (Large objects)     | -1.0000 |
+
+
+### Baseline Faster R-CNN for 3 labels
+
+**IN PROGESS**
+
+---
+
 ## Future
 
 Future improvements will arrive soon including:
 - New models
 - New data format (COCO or YOLO format)
 - User-friendly experience to use the repo
+- Save the plot
 - And much more !
 
 Stay Tuned :) 
