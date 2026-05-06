@@ -54,7 +54,7 @@ You can download the repository and run the code, here is the good pipeline:
 
 ---
 
-## Futur 
+## Future
 
 Future improvements will arrive soon including:
 - New models
