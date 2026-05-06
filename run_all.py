@@ -12,15 +12,18 @@ import inference as inference_model
 
 if __name__ == "__main__":
     target_labels = cfg.LABELS
+    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
+    root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
-    model_name = "baseline_faster_rcnn"
+    print(f"Running pipeline for labels: {target_labels}")
+
+    model_name = f"baseline_faster_rcnn_{len(target_labels)}_labels"
     weights_dir = os.path.join(cfg.MODEL_WEIGHTS_PATH, model_name)
     os.makedirs(weights_dir, exist_ok=True)
 
-    preprocess = True
     visualize = True
 
-    if preprocess:
+    if not os.path.exists(root_dir):
         geojson_label_file = os.path.join(cfg.LABELS_PATH, "xView_train.geojson")
         labels_map_file = os.path.join(cfg.LABELS_PATH, "xview_class_labels.txt")  # got from xview github
 
@@ -33,6 +36,8 @@ if __name__ == "__main__":
             target_labels,
             filtered_features,
             labels_dict,
+            output_path=root_dir,
+            folder_name=folder_name,
             val_ratio=0.2,
             random_seed=42
         )
@@ -42,9 +47,6 @@ if __name__ == "__main__":
             list_image_id = filtered_features["image_id"].unique()
             image_id = random.choice(list_image_id)
             filtered_features = filtered_features[filtered_features["image_id"] == image_id]
-
-    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
-    root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
     if not os.path.exists(root_dir):
         print(f"Dataset directory not found at {root_dir}")
@@ -60,7 +62,7 @@ if __name__ == "__main__":
         idx = np.random.randint(0, len(train_dataset))
         utils.visualize_augmented(train_dataset, idx=idx)
 
-    train_model.train(
+    weights_best_path = train_model.train(
         target_labels,
         folder_name,
         root_dir,
@@ -74,7 +76,7 @@ if __name__ == "__main__":
         target_labels,
         folder_name,
         root_dir,
-        os.path.join(weights_dir, f"{folder_name}_best.pth"),
+        weights_best_path,
         device=cfg.DEVICE
     )
 

@@ -124,9 +124,8 @@ def visualize_augmented(dataset, idx=0, class_colors=None):
     plt.show()
 
 
-def prepare_xview2coco(target_labels, filtered_features, labels_dict, val_ratio=0.2, random_seed=42):
-    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
-    output_path = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
+def prepare_xview2coco(target_labels, filtered_features, labels_dict, output_path, folder_name, val_ratio=0.2, random_seed=42):
+
     output_images_path = os.path.join(output_path, "images")
     output_annotations_path = os.path.join(output_path, "annotations")
 

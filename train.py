@@ -156,6 +156,9 @@ def train(target_labels, folder_name, root_dir, weight_dir, weights_name=None, d
             best_val_loss = val_loss
             torch.save(model.state_dict(), weights_best_path)
 
+    return weights_best_path
+
+
 
 if __name__ == "__main__":
     print("Hello, I'm the training script")
