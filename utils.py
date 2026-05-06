@@ -30,7 +30,7 @@ def plot_image(image_id, filtered_features, class_name):
         elif img.shape[0] >= 3:
             img_rgb = np.dstack((img[0], img[1], img[2]))
         else:
-            raise ValueError(f"Nombre de bandes non supporté: {img.shape[0]}")
+            raise ValueError(f"Invalid image [{image_id}] shape: {img.shape[0]}")
 
         fig, ax = plt.subplots(figsize=(12, 12))
         ax.imshow(img_rgb)
@@ -56,7 +56,7 @@ def plot_image(image_id, filtered_features, class_name):
 
         p = PatchCollection(patches, match_original=True)
         ax.add_collection(p)
-        ax.set_title(f"Annotations pour {image_id}")
+        ax.set_title(f"Annotations for {image_id}")
         ax.axis("off")
         plt.tight_layout()
         plt.show()
@@ -78,7 +78,6 @@ def visualize_augmented(dataset, idx=0, class_colors=None):
 
     img = img.permute(1, 2, 0).cpu().numpy()  # (H, W, C)
 
-    # Denormaliser l'image pour l'affichage matplotlib
     mean = np.array([0, 0, 0])
     std = np.array([1, 1, 1])
     img = std * img + mean

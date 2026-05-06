@@ -83,7 +83,6 @@ class XViewCocoDataset(Dataset):
         image_id = img_info['id']
         image_path = os.path.join(self.root_dir, 'images', img_info['file_name'])
 
-        # Utilisation de rasterio pour lire correctement les .tif
         with rasterio.open(image_path) as src:
             image = src.read()
 
@@ -110,13 +109,11 @@ class XViewCocoDataset(Dataset):
             y_max = y_min + h
 
             if x_min < 0 or y_min < 0 or x_max > original_width or y_max > original_height:
-                # On ignore silencieusement ou on print si besoin
                 continue
 
             bboxes.append([x_min, y_min, x_max, y_max])
             labels.append(ann['category_id'])
 
-        # Application de l'augmentation uniquement sur l'image et les bboxes
         transformed = self.transform(
             image=image,
             bboxes=bboxes,
@@ -148,9 +145,13 @@ class XViewCocoDataset(Dataset):
 
 
 if __name__ == "__main__":
-    target_labels = ["Small Aircraft"]
-    folder_name = target_labels[0].replace(" ", "_")
+    target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
+    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
+
+    if not os.path.exists(root_dir):
+        print(f"Dataset directory not found at {root_dir}")
+        exit()
 
     train_dataset = XViewCocoDataset(
         root_dir=root_dir,

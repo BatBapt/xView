@@ -26,7 +26,7 @@ def plot_predictions(image_rgb, dataset, predictions, target, confidence_thresho
         rect = Rectangle((x_min, y_min), width, height,
                          linewidth=2, edgecolor="red", facecolor="none", linestyle="--")
         ax.add_patch(rect)
-        ax.text(x_min, y_min - 5, "Vrai Objet", color="red", fontsize=8, fontweight='bold')
+        ax.text(x_min, y_min - 5, "True object", color="red", fontsize=8, fontweight='bold')
 
     pred_boxes = predictions['boxes'].cpu().numpy()
     pred_scores = predictions['scores'].cpu().numpy()
@@ -51,12 +51,12 @@ def plot_predictions(image_rgb, dataset, predictions, target, confidence_thresho
 
     image_id = target['image_id'].item()
     ax.set_title(
-        f"Image ID: {image_id} | Vrais Objets: {len(gt_boxes)} | Détectés: {count} (Seuil: {confidence_threshold})")
+        f"Image ID: {image_id} | True Object: {len(gt_boxes)} | Detected: {count} (Threshold: {confidence_threshold})")
 
     from matplotlib.lines import Line2D
     legend_elements = [
-        Line2D([0], [0], color='red', lw=2, linestyle='--', label='Vérité Terrain (Ground Truth)'),
-        Line2D([0], [0], color='lime', lw=2, label='Prédiction du Modèle')
+        Line2D([0], [0], color='red', lw=2, linestyle='--', label='Ground Truth'),
+        Line2D([0], [0], color='lime', lw=2, label='Model Prediction')
     ]
     ax.legend(handles=legend_elements, loc='upper right')
 
@@ -73,7 +73,7 @@ def evaluate_performance(model, dataset, device):
     model.eval()
     with torch.no_grad():
         for i, (images, targets) in enumerate(test_loader):
-            print(f"Évaluation du lot {i + 1}/{len(test_loader)}...")
+            print(f"Processing batch {i + 1}/{len(test_loader)}...")
 
             images = list(img.to(device) for img in images)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -101,18 +101,28 @@ def evaluate_performance(model, dataset, device):
     return results
 
 
-def main():
+def inference():
+    weight_dir = "weights"
+    weights_path = f"{weight_dir}/faster_rcnn_best.pth"
+    if not os.path.exists(weights_path):
+        print(f"Model weight {weights_path} not found. Make sure to train the model before")
+        exit()
+
     target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
     folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
+    if not os.path.exists(root_dir):
+        print(f"Dataset directory not found at {root_dir}")
+        exit()
+
     num_classes = len(target_labels) + 1
-    weights_path = "weights/faster_rcnn_best.pth"
+
     confidence_threshold = 0.5
 
     device = cfg.DEVICE
 
-    print("Chargement des données de test...")
+    print("Loading test set")
     test_dataset = my_dataset.XViewCocoDataset(
         root_dir=root_dir,
         annotation_file=f"annotations/{folder_name}_val.json",
@@ -120,7 +130,7 @@ def main():
     )
     print(f"{len(test_dataset)} images found.")
 
-    print("Chargement des poids du modèle...")
+    print("Loading model weights")
     model = my_models.get_model_instance_segmentation(num_classes)
 
     model.load_state_dict(torch.load(weights_path, map_location=device))
@@ -132,11 +142,10 @@ def main():
 
     evaluate_performance(model, test_dataset, device)
 
-    exit()
 
     with torch.no_grad():
         for i in range(num_images_to_test):
-            print(f"Analyse de l'image {i + 1}/{num_images_to_test}...")
+            print(f"Analyzing image {i + 1}/{num_images_to_test}...")
 
             image_tensor, target = test_dataset[i]
 
@@ -150,4 +159,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    inference()

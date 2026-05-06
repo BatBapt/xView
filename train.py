@@ -11,7 +11,7 @@ import configuration as cfg
 
 def get_dataloaders(root_dir, folder_name, batch_size=4, num_workers=2):
 
-    print("Initialisation des datasets...")
+    print("Dataset initialization")
 
     train_dataset = my_dataset.XViewCocoDataset(
         root_dir=root_dir,
@@ -69,7 +69,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch):
         loop.set_postfix(loss=losses.item())
 
     avg_loss = total_loss / len(data_loader)
-    print(f"-> Fin de l'epoch {epoch} | Loss moyenne : {avg_loss:.4f}")
+    print(f"\nMean loss at epoch {epoch} : {avg_loss:.4f}")
 
     return avg_loss
 
@@ -94,7 +94,7 @@ def validate(model, data_loader, device, epoch):
     return total_loss / len(data_loader)
 
 
-def main():
+def train():
     target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
     folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
     root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
@@ -145,7 +145,7 @@ def main():
 
         lr_scheduler.step()
 
-        print(f"\n->Bilan Epoch {epoch} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+        print(f"\nResult epoch {epoch} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
 
         torch.save(model.state_dict(), f"{weight_dir}/faster_rcnn_last.pth")
 
@@ -156,4 +156,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    train()
