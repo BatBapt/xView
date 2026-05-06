@@ -82,13 +82,10 @@ def evaluate_performance(model, dataset, device):
 
             metric.update(preds, targets)
 
-    # Calcul final
-    print("\nCalcul des résultats")
     results = metric.compute()
 
-    # Affichage propre des résultats
     print("\n" + "*" * 50)
-    print("Evaluation results)")
+    print("Evaluation results")
     print("*" * 50)
     print(f"mAP (IoU=0.50:0.95)      : {results['map'].item():.4f}")
     print(f"mAP50 (IoU=0.50 strict)  : {results['map_50'].item():.4f}")
@@ -101,25 +98,16 @@ def evaluate_performance(model, dataset, device):
     return results
 
 
-def inference():
-    weights_path = f"{cfg.MODEL_WEIGHTS_PATH}/faster_rcnn_best.pth"
+def inference(target_labels, folder_name, root_dir, weights_path, threshold=0.5, device="cpu"):
     if not os.path.exists(weights_path):
         print(f"Model weight {weights_path} not found. Make sure to train the model before")
         exit()
-
-    target_labels = cfg.LABELS
-    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
-    root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
 
     if not os.path.exists(root_dir):
         print(f"Dataset directory not found at {root_dir}")
         exit()
 
     num_classes = len(target_labels) + 1
-
-    confidence_threshold = 0.5
-
-    device = cfg.DEVICE
 
     print("Loading test set")
     test_dataset = my_dataset.XViewCocoDataset(
@@ -141,7 +129,6 @@ def inference():
 
     evaluate_performance(model, test_dataset, device)
 
-
     with torch.no_grad():
         for i in range(num_images_to_test):
             print(f"Analyzing image {i + 1}/{num_images_to_test}...")
@@ -154,8 +141,8 @@ def inference():
 
             image_for_plot = image_tensor.permute(1, 2, 0).cpu().numpy()
 
-            plot_predictions(image_for_plot, test_dataset, predictions, target, confidence_threshold)
+            plot_predictions(image_for_plot, test_dataset, predictions, target, threshold)
 
 
 if __name__ == "__main__":
-    inference()
+    print("Hello, I'm the inference script")

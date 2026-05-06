@@ -25,6 +25,9 @@ def get_dataloaders(root_dir, folder_name, batch_size=4, num_workers=2):
         is_train=False
     )
 
+    print(f"Number of element in the training set: {len(train_dataset)}")
+    print(f"Number of element in the validation set: {len(val_dataset)}")
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -94,10 +97,12 @@ def validate(model, data_loader, device, epoch):
     return total_loss / len(data_loader)
 
 
-def train():
-    target_labels = cfg.LABELS
-    folder_name = "_".join([label.replace(" ", "_").replace("/", "_") for label in target_labels])
-    root_dir = os.path.join(cfg.COCO_FORMAT_PATH, folder_name)
+def train(target_labels, folder_name, root_dir, weight_dir, weights_name=None, device="cpu"):
+    if weights_name is None:
+        weights_name = {"best": "faster_rcnn_best.pth", "last": "faster_rcnn_last.pth"}
+
+    weights_last_path = os.path.join(weight_dir, weights_name["last"])
+    weights_best_path = os.path.join(weight_dir, weights_name["best"])
 
     num_classes = len(target_labels) + 1  # +1 bc of background
     num_epochs = cfg.EPOCHS
@@ -111,7 +116,7 @@ def train():
 
     print("Loading model")
     model = my_models.get_model_instance_segmentation(num_classes)
-    model.to(cfg.DEVICE)
+    model.to(device)
 
     backbone_params = []
     head_params = []
@@ -131,29 +136,26 @@ def train():
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
 
-    weight_dir = cfg.MODEL_WEIGHTS_PATH
-    os.makedirs(weight_dir, exist_ok=True)
-
     best_val_loss = float('inf')
 
     print("Starting training !")
     for epoch in range(1, num_epochs + 1):
 
-        train_loss = train_one_epoch(model, optimizer, train_loader, cfg.DEVICE, epoch)
+        train_loss = train_one_epoch(model, optimizer, train_loader, device, epoch)
 
-        val_loss = validate(model, val_loader, cfg.DEVICE, epoch)
+        val_loss = validate(model, val_loader, device, epoch)
 
         lr_scheduler.step()
 
         print(f"\nResult epoch {epoch} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
 
-        torch.save(model.state_dict(), f"{weight_dir}/faster_rcnn_last.pth")
+        torch.save(model.state_dict(), weights_last_path)
 
         if val_loss < best_val_loss:
             print(f"Model saved with validation loss: {val_loss:.4f}")
             best_val_loss = val_loss
-            torch.save(model.state_dict(), f"{weight_dir}/faster_rcnn_best.pth")
+            torch.save(model.state_dict(), weights_best_path)
 
 
 if __name__ == "__main__":
-    train()
+    print("Hello, I'm the training script")

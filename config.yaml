@@ -1,6 +1,6 @@
 settings:
   data_path: "D:/Programmation/IA/datas/xView"
-  labels: ["Small Aircraft", "Passenger/Cargo Plane"]
+  labels: ["Small Aircraft", "Passenger/Cargo Plane", "Helicopter"]
   num_workers: 2
 
 hyperparameters:
