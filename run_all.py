@@ -12,15 +12,15 @@ if __name__ == "__main__":
     gdf = gpd.read_file(geojson_label_file)
     labels_dict = utils.load_labels_txt(labels_map_file)
 
-    target_labels = ["Small Aircraft"]
+    target_labels = ["Small Aircraft", "Passenger/Cargo Plane"]
 
     filtered_features = utils.filter_gdf_by_labels(gdf, labels_dict, target_labels)
 
     utils.prepare_xview2coco(
         target_labels,
         filtered_features,
-        val_ratio=0.15,
-        test_ratio=0.05,
+        labels_dict,
+        val_ratio=0.2,
         random_seed=42
     )
 
