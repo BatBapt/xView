@@ -1,10 +1,10 @@
 settings:
   data_path: "D:/Programmation/IA/datas/xView"
-  labels: "all" # should be 'all' or a list of labels such as ["Small Aircraft", "Passenger/Cargo Plane", "Helicopter"]
+  labels: ["Small Aircraft", "Passenger/Cargo Plane", "Helicopter"] # should be 'all' or a list of labels such as ["Small Aircraft", "Passenger/Cargo Plane", "Helicopter"]
   num_workers: 2
 
 hyperparameters:
-  batch_size: 1
-  epochs: 100
+  batch_size: 8
+  epochs: 500
   lr_backbone: 0.005
   lr_head: 0.0001

@@ -76,6 +76,7 @@ What has been done so far ?
   - **mAP (0.5) ~= 0.3015**
   - Different learning rate were used for the backbone and the new head 
   - The results are smaller than the previous version with only 2 labels.
+  - This model was aslo trained with 500 epochs, but it didn't improve the model performance
   
     | Metric                  | Value   |
     |:------------------------|:--------|
