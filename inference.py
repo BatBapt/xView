@@ -6,10 +6,9 @@ from matplotlib.patches import Rectangle
 from torch.utils.data import DataLoader
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
+import configuration as cfg
 import utils as utils
 import dataset as my_dataset
-import models as my_models
-import configuration as cfg
 
 
 def plot_predictions(image_rgb, dataset, predictions, target, confidence_threshold=0.5):
@@ -65,22 +64,48 @@ def plot_predictions(image_rgb, dataset, predictions, target, confidence_thresho
     plt.show()
 
 
-def evaluate_performance(model, dataset, device):
-    test_loader = DataLoader(dataset, batch_size=4, shuffle=False, num_workers=2, collate_fn=utils.collate_fn)
+def evaluate_and_infer(folder_name, root_dir, model, threshold=0.5, visualize=False, device="cpu"):
+    if not os.path.exists(root_dir):
+        print(f"Dataset directory not found at {root_dir}")
+        return None
+
+    print("Loading test set...")
+    test_dataset = my_dataset.XViewCocoDataset(
+        root_dir=root_dir,
+        annotation_file=f"annotations/{folder_name}_val.json",
+        is_train=False
+    )
+    print(f"{len(test_dataset)} images found.")
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=cfg.BATCH_SIZE,
+        shuffle=False,
+        num_workers=cfg.NUM_WORKERS,
+        collate_fn=utils.collate_fn
+    )
 
     metric = MeanAveragePrecision(iou_type="bbox")
 
+    print("Loading model weights and starting evaluation...")
     model.eval()
+
     with torch.no_grad():
         for i, (images, targets) in enumerate(test_loader):
             print(f"Processing batch {i + 1}/{len(test_loader)}...")
 
-            images = list(img.to(device) for img in images)
-            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+            images_device = list(img.to(device) for img in images)
+            targets_device = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-            preds = model(images)
+            preds = model(images_device)
 
-            metric.update(preds, targets)
+            metric.update(preds, targets_device)
+
+            if visualize:
+                for img_tensor, pred, target in zip(images, preds, targets):
+                    image_for_plot = img_tensor.permute(1, 2, 0).cpu().numpy()
+
+                    plot_predictions(image_for_plot, test_dataset, pred, target, threshold)
 
     results = metric.compute()
 
@@ -90,46 +115,12 @@ def evaluate_performance(model, dataset, device):
     print(f"mAP (IoU=0.50:0.95)      : {results['map'].item():.4f}")
     print(f"mAP50 (IoU=0.50 strict)  : {results['map_50'].item():.4f}")
     print(f"mAP75 (IoU=0.75 strict)  : {results['map_75'].item():.4f}")
-    print(f"mAP (Petits objets)      : {results['map_small'].item():.4f}")
-    print(f"mAP (Moyens objets)      : {results['map_medium'].item():.4f}")
-    print(f"mAP (Grands objets)      : {results['map_large'].item():.4f}")
+    print(f"mAP (Small objects)      : {results['map_small'].item():.4f}")
+    print(f"mAP (Medium objects)     : {results['map_medium'].item():.4f}")
+    print(f"mAP (Large objects)      : {results['map_large'].item():.4f}")
     print("*" * 50 + "\n")
 
     return results
-
-
-def inference(folder_name, root_dir, model, threshold=0.5, visualize=False, device="cpu"):
-    if not os.path.exists(root_dir):
-        print(f"Dataset directory not found at {root_dir}")
-        exit()
-    print("Loading test set")
-    test_dataset = my_dataset.XViewCocoDataset(
-        root_dir=root_dir,
-        annotation_file=f"annotations/{folder_name}_val.json",
-        is_train=False
-    )
-    print(f"{len(test_dataset)} images found.")
-
-    print("Loading model weights")
-
-    num_images_to_test = len(test_dataset)
-
-    evaluate_performance(model, test_dataset, device)
-
-    with torch.no_grad():
-        for i in range(num_images_to_test):
-            print(f"Analyzing image {i + 1}/{num_images_to_test}...")
-
-            image_tensor, target = test_dataset[i]
-
-            image_batch = image_tensor.unsqueeze(0).to(device)
-
-            predictions = model(image_batch)[0]
-
-            image_for_plot = image_tensor.permute(1, 2, 0).cpu().numpy()
-
-            if visualize:
-                plot_predictions(image_for_plot, test_dataset, predictions, target, threshold)
 
 
 if __name__ == "__main__":
