@@ -77,21 +77,28 @@ if __name__ == "__main__":
     model = my_models.get_faster_rcnn_model(num_classes=num_classes, default=False)
     model.to(device)
 
-    weights_best_path = train_model.train(
-        folder_name,
-        root_dir,
-        model,
-        weights_dir,
-        device=device
-    )
+    weights_name = {"best": f"{model_name}_best.pth", "last": f"{model_name}_last.pth"}
 
-    print("Training done !")
+    if not os.path.exists(os.path.join(weights_dir, weights_name["best"])):
+        weights_best_path = train_model.train(
+            folder_name,
+            root_dir,
+            model,
+            weights_dir,
+            weights_name=weights_name,
+            device=device
+        )
+        print("Training done !")
+
+    else:
+        weights_best_path = os.path.join(weights_dir, weights_name["best"])
 
     model = my_models.get_faster_rcnn_model(num_classes=num_classes, default=False)
     model.load_state_dict(torch.load(weights_best_path, map_location=device))
+    model.to(device)
     model.eval()
 
-    inference_model.inference(
+    inference_model.evaluate_and_infer(
         folder_name,
         root_dir,
         model,

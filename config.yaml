@@ -4,7 +4,7 @@ settings:
   num_workers: 2
 
 hyperparameters:
-  batch_size: 4
+  batch_size: 2
   epochs: 100
   lr_backbone: 0.005
   lr_head: 0.0001

@@ -8,7 +8,7 @@ def get_faster_rcnn_model(num_classes, default=True):
         model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT")
 
     else:
-        new_anchors_size = ((8,), (16,), (32,), (64,), (128,))  # default from pytorch is ((32,), (64,), (128,), (256,), (512,))
+        new_anchors_size = ((2,), (4,), (8,), (16,), (32,))  # default from pytorch is ((32,), (64,), (128,), (256,), (512,))
 
         aspect_ratios = ((0.5, 1.0, 2.0),) * len(new_anchors_size)
 

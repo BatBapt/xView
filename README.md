@@ -31,7 +31,7 @@ All the models will be trained with my GPU, Nvidia RTX 4060 (8GB VRAM)
 
 ## Model used
 
-- A baseline [Faster R-CNN](https://arxiv.org/pdf/1506.01497).
+- [Faster R-CNN](https://arxiv.org/pdf/1506.01497).
 
 ---
 
@@ -50,44 +50,46 @@ You can download the repository and run the code, here is the good pipeline:
 
 What has been done so far ?
 
-### Baseline Faster R-CNN for 2 labels
-- I have trained a baseline model with a Faster R-CNN for 100 epochs for only **2** labels with a batch size of 8.
+### 1. Baseline Faster R-CNN for 2 labels
+I have trained a baseline model with a Faster R-CNN for 100 epochs for only **2** labels with a batch size of 8.
   - Trained on 2 labels: 'Small Aircraft' and 'Passenger/Cargo Plane'
   - Time / epochs ~= 30sec
   - **mAP (0.5) ~= 0.35**
   - Different learning rate were used for the backbone and the new head 
   - While the results are small, it also shows a good future.
-  
-    | Metric                  | Value   |
-    |:------------------------|:--------|
-    | mAP (IoU=0.50:0.95)     | 0.1699  |
-    | mAP50 (IoU=0.50 strict) | 0.3528  |
-    | mAP75 (IoU=0.75 strict) | 0.1305  |
-    | mAP (Small objects)     | 0.1463  |
-    | mAP (Medium objects)    | 0.1827  |
-    | mAP (Large objects)     | -1.0000 |
+
+### 2. Baseline Faster R-CNN for 3 labels
+
+I have trained a baseline model with a Faster R-CNN for 100 epochs for only **3** labels with a batch size of 8.
+- Trained on 3 labels: 'Small Aircraft' and 'Passenger/Cargo Plane' and 'Helicopter'
+- Time / epochs ~= 33sec
+- **mAP (0.5) ~= 0.3015**
+- Different learning rate were used for the backbone and the new head 
+- The results are smaller than the previous version with only 2 labels.
+- This model was also trained with 500 epochs, but it didn't improve the model performance
 
 
-### Baseline Faster R-CNN for 3 labels
-
-- I have trained a baseline model with a Faster R-CNN for 100 epochs for only **3** labels with a batch size of 8.
-  - Trained on 3 labels: 'Small Aircraft' and 'Passenger/Cargo Plane' and 'Helicopter'
-  - Time / epochs ~= 30sec
-  - **mAP (0.5) ~= 0.3015**
-  - Different learning rate were used for the backbone and the new head 
-  - The results are smaller than the previous version with only 2 labels.
-  - This model was aslo trained with 500 epochs, but it didn't improve the model performance
-  
-    | Metric                  | Value   |
-    |:------------------------|:--------|
-    | mAP (IoU=0.50:0.95)     | 0.1390  |
-    | mAP50 (IoU=0.50 strict) | 0.3015  |
-    | mAP75 (IoU=0.75 strict) | 0.0967  |
-    | mAP (Small objects)     | 0.1188  |
-    | mAP (Medium objects)    | 0.2162  |
-    | mAP (Large objects)     | -1.0000 |
-
+### 3. Faster R-CNN for 3 labels with different anchors size
+Instead of using the default Pytorch Anchors implementation in the model, which were designed for "normal" pictures,
+I choose to use different anchors size: `((8,), (16,), (32,), (64,), (128,))`. The model was trained for only 100 epochs on **3** labels with a batch size of 8.
+- Trained on 3 labels: 'Small Aircraft' and 'Passenger/Cargo Plane' and 'Helicopter'
+- Time / epochs ~= 33sec
+- **mAP (0.5) ~= 0.3148**
+- Different learning rate were used for the backbone and the new head
+- The results are better than the baseline version, suggesing
 ---
+
+## Results
+
+Here you can see the results for each configuration
+
+| Configuration | Number of Labels | mAP (IoU=0.50:0.95) | mAP50 (IoU=0.50 strict) | mAP75 (IoU=0.75 strict) | mAP (Small objects) | mAP (Medium objects) | mAP (Large objects) |
+|:--------------|:-----------------|:--------------------|:------------------------|:------------------------|:--------------------|:---------------------|:--------------------|
+| Exp 1         | 2                | 0.1699              | 0.3528                  | 0.1305                  | 0.1463              | 0.1827               | -1.0000             |              |
+| Exp 2         | 3                | 0.1390              | 0.3015                  | 0.0967                  | 0.1188              | 0.2162               | -1.0000             |
+| Exp 3         | 3                | 0.1505              | 0.3148                  | 0.1084                  | 0.1361              | 0.2276               | -1.0000             |
+
+--- 
 
 ## Future
 
