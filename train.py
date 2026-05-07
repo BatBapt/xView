@@ -97,14 +97,13 @@ def validate(model, data_loader, device, epoch):
     return total_loss / len(data_loader)
 
 
-def train(target_labels, folder_name, root_dir, weight_dir, weights_name=None, device="cpu"):
+def train(folder_name, root_dir, model, weight_dir, weights_name=None, device="cpu"):
     if weights_name is None:
         weights_name = {"best": "faster_rcnn_best.pth", "last": "faster_rcnn_last.pth"}
 
     weights_last_path = os.path.join(weight_dir, weights_name["last"])
     weights_best_path = os.path.join(weight_dir, weights_name["best"])
 
-    num_classes = len(target_labels) + 1  # +1 bc of background
     num_epochs = cfg.EPOCHS
     batch_size = cfg.BATCH_SIZE
     num_workers = cfg.NUM_WORKERS
@@ -113,10 +112,6 @@ def train(target_labels, folder_name, root_dir, weight_dir, weights_name=None, d
     backbone_lr = cfg.LR_BACKBONE # backbone
 
     train_loader, val_loader = get_dataloaders(root_dir, folder_name, batch_size=batch_size, num_workers=num_workers)
-
-    print("Loading model")
-    model = my_models.get_model_instance_segmentation(num_classes)
-    model.to(device)
 
     backbone_params = []
     head_params = []

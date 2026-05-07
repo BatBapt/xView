@@ -2,18 +2,22 @@ import os
 import geopandas as gpd
 import random
 import numpy as np
+import torch
 
 import configuration as cfg
 import utils as utils
 import dataset as my_dataset
 import train as train_model
 import inference as inference_model
+import models as my_models
 
 
 if __name__ == "__main__":
     target_labels = cfg.LABELS
     labels_map_file = os.path.join(cfg.LABELS_PATH, "xview_class_labels.txt")  # got from xview github
     labels_dict = utils.load_labels_txt(labels_map_file)
+
+    device = cfg.DEVICE
 
     if target_labels == "all":
         folder_name = "all_labels"
@@ -24,7 +28,7 @@ if __name__ == "__main__":
 
     print(f"Running pipeline for labels: {target_labels}")
 
-    model_name = f"baseline_faster_rcnn_{len(target_labels)}_labels"
+    model_name = f"anchors_faster_rcnn_{len(target_labels)}_labels"
     weights_dir = os.path.join(cfg.MODEL_WEIGHTS_PATH, model_name)
     os.makedirs(weights_dir, exist_ok=True)
 
@@ -68,24 +72,32 @@ if __name__ == "__main__":
         idx = np.random.randint(0, len(train_dataset))
         utils.visualize_augmented(train_dataset, idx=idx)
 
+    num_classes = len(target_labels) + 1
+
+    model = my_models.get_faster_rcnn_model(num_classes=num_classes, default=False)
+    model.to(device)
+
     weights_best_path = train_model.train(
-        target_labels,
         folder_name,
         root_dir,
+        model,
         weights_dir,
-        device=cfg.DEVICE
+        device=device
     )
 
     print("Training done !")
 
+    model = my_models.get_faster_rcnn_model(num_classes=num_classes, default=False)
+    model.load_state_dict(torch.load(weights_best_path, map_location=device))
+    model.eval()
+
     inference_model.inference(
-        target_labels,
         folder_name,
         root_dir,
-        weights_best_path,
+        model,
         threshold=0.5,
         visualize=visualize,
-        device=cfg.DEVICE
+        device=device
     )
 
 

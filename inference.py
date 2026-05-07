@@ -98,17 +98,10 @@ def evaluate_performance(model, dataset, device):
     return results
 
 
-def inference(target_labels, folder_name, root_dir, weights_path, threshold=0.5, visualize=False, device="cpu"):
-    if not os.path.exists(weights_path):
-        print(f"Model weight {weights_path} not found. Make sure to train the model before")
-        exit()
-
+def inference(folder_name, root_dir, model, threshold=0.5, visualize=False, device="cpu"):
     if not os.path.exists(root_dir):
         print(f"Dataset directory not found at {root_dir}")
         exit()
-
-    num_classes = len(target_labels) + 1
-
     print("Loading test set")
     test_dataset = my_dataset.XViewCocoDataset(
         root_dir=root_dir,
@@ -118,12 +111,6 @@ def inference(target_labels, folder_name, root_dir, weights_path, threshold=0.5,
     print(f"{len(test_dataset)} images found.")
 
     print("Loading model weights")
-    model = my_models.get_model_instance_segmentation(num_classes)
-
-    model.load_state_dict(torch.load(weights_path, map_location=device))
-
-    model.eval()
-    model.to(device)
 
     num_images_to_test = len(test_dataset)
 
